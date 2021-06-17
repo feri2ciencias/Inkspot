@@ -1,0 +1,48 @@
+##############################################################################################
+###Inkspot####################################################################################
+###CREA UN GRÁFICO DE ACUERDO A LAS ABUNDANCIAS DE LOS TAXA, CORRELACIONANDOLO CON UNA VARIABLE
+
+#Se necesita una base de datos ambiental y una de abundancias totales
+data.ink<-read.xlsx('nuevoplan.xlsx', "INKSPOT", row.names=T) #datos de abundancia
+amb<-read.xlsx('nuevoplan.xlsx', "ambi", row.names=T) #datos ambientales
+data
+sqrt(data)->raiz  #Los datos necesitan estar estandarizados con raíz cuadrada para quitarle peso a las especies abundantes
+stand3<-decostand(amb, "standardize")   #Con esto estadarizas las variables ambientales
+
+#Se necesitan estas paqueterias
+library(vegan)
+library(rioja)
+
+
+#Esto solo es para cambiarle el nombre los datos de la colum 10 y 6 lo puedes omitir
+a.spec.1<-data.ink
+a.prof<-stand3
+
+#Seleccionamos la variable que queremos analizar
+amb[,1]->odo
+
+#Este primer inkspot ayuda dar un panorama general de como se acomodan tus especies y tus sitios
+inkspot(a.spec.1, cex.axis=0.6)
+
+chiro.dist <- vegdist(a.spec.1, method = "bray") #Con esto sacas un cluster de acuerdo a los sitios
+chiro.clu <- hclust(chiro.dist, method="ward.D") # Con esto sacas un cluster de acuerdo a las especies
+plot(chiro.clu, main="wards method", ylab = "distance", xlab = "Lake code", sub="",hang=-0.01) # esto te da el plot agrupando los sitios 
+env.cophen.d <- cophenetic(chiro.clu)# cophenetic correlation con manhattan es 0.663
+env.cor.d <- cor(chiro.dist, env.cophen.d)
+env.cor.d
+
+#Acá puedes explorar mas tus datos  de acurdo a los taxa
+X11()
+ord<-chiro.clu$order
+inkspot(a.spec.1[ord,]) # ahora pusimos los datos ordenados por orden de los quiros  en el cluster
+groups <- cutree(chiro.clu, 3)
+inkspot (a.spec.1[ord,],bg=groups[ord])
+
+
+#Acá esta el InKspot con base a la variable ambiental que quieras
+
+# En nuestro caso relacionamos Amebas testadas~de oxigeno
+X11()  #Para sacar la relacion conforme a la profundidad
+inkspot(a.spec.1, odo,use.rank=TRUE,x.axis.top=TRUE, x.axis="sites", 
+        cex.axis=0.6,reorder.species=TRUE, legend.values=c(2, 20, 55))
+?inkspot
